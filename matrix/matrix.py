@@ -1,22 +1,40 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from matrix_exceptions import \
-    RowTypeNotTuple, RowItemNotNumber, RowAndColumnNumberDifferent
+from matrix_exceptions import RowTypeNotTuple, RowItemNotNumber, RowAndColumnNumberDifferent, ObjectTypeNotMatrix, \
+                              ObjectTypeNotLegalToMultiply, MatrixNotLegalToMultiply, IllegalInput
 
 # TODO:
-#   Finish current TODO's.
-#   Add new exceptions types.
 #   Add comparison, iteration & hash.
 
 
+def calc_mul_single_cell(row: tuple = None, cul: tuple = None):
+    if row is None or cul is None:
+        return None
+
+    if len(row) != len(cul):
+        return None
+
+    result = 0
+    for i in range(len(row)):
+        result = result + (row[i] * cul[i])
+
+    return result
+
+
 @dataclass(frozen=True)
-class Matrix():
+class Matrix:
+
+    # ((1,1),(2,3)) -> 2 rows, 2 culomns:
+    # Column 1: (1,1) Column 2: (2,3)
+    # Row 1: (1,2) Row 2: (1,3)
 
     matrix: tuple = ()
 
     def __post_init__(self):
         if self.is_valid_matrix():
             object.__setattr__(self, "matrix", self.matrix)
+            object.__setattr__(self, "rows_number", len(self.matrix))
 
     def __str__(self):
         return "%s" % (self.matrix,)
@@ -26,90 +44,86 @@ class Matrix():
 
     def __add__(self, other):
         if type(other) is not Matrix:
-            raise "..."
-        rows_num_a = len(self.matrix)
+            raise ObjectTypeNotMatrix(other)
+
         rows_num_b = len(other.matrix)
-        if rows_num_a >= rows_num_b:
+        if self.rows_number >= rows_num_b:
             return Matrix(tuple(tuple(self.matrix[j][i] + other.matrix[j][i]
-                if i < rows_num_b and j < rows_num_b else self.matrix[j][i]
-                for i in (range(rows_num_a))) for j in (range(rows_num_a))))
+                                      if i < rows_num_b and j < rows_num_b else self.matrix[j][i]
+                                      for i in (range(self.rows_number))) for j in (range(self.rows_number))))
         else:
             return Matrix(tuple(tuple(self.matrix[j][i] + other.matrix[j][i]
-                if i < rows_num_a and j < rows_num_a else other.matrix[j][i]
-                for i in (range(rows_num_b))) for j in (range(rows_num_b))))
+                                      if i < self.rows_number and j < self.rows_number else other.matrix[j][i]
+                                      for i in (range(rows_num_b))) for j in (range(rows_num_b))))
 
     def __sub__(self, other):
         if type(other) is not Matrix:
-            raise "..."
-        rows_num_a = len(self.matrix)
+            raise ObjectTypeNotMatrix(other)
+
         rows_num_b = len(other.matrix)
-        if rows_num_a >= rows_num_b:
+        if self.rows_number >= rows_num_b:
             return Matrix(tuple(tuple(self.matrix[j][i] - other.matrix[j][i]
-                if i < rows_num_b and j < rows_num_b else self.matrix[j][i]
-                for i in (range(rows_num_a))) for j in (range(rows_num_a))))
+                                      if i < rows_num_b and j < rows_num_b
+                                      else self.matrix[j][i]
+                                      for i in (range(self.rows_number))) for j in (range(self.rows_number))))
         else:
             return Matrix(tuple(tuple(self.matrix[j][i] - other.matrix[j][i]
-                if i < rows_num_a and j < rows_num_a else -other.matrix[j][i]
-                for i in (range(rows_num_b))) for j in (range(rows_num_b))))
+                                      if i < self.rows_number and j < self.rows_number else -other.matrix[j][i]
+                                      for i in (range(rows_num_b))) for j in (range(rows_num_b))))
 
     def __mul__(self, other):
-        if type(other) is int or float:
-            rows_num_a = len(self.matrix)
+        if type(other) is int or type(other) is float:
             return Matrix(tuple(tuple(self.matrix[j][i] * other
-                for i in (range(rows_num_a))) for j in (range(rows_num_a))))
+                                      for i in range(self.rows_number)) for j in range(self.rows_number)))
+
         elif type(other) is Matrix:
-            # TODO
-            raise "Not Implemented!"
+            if len(self.matrix[0]) != other.rows_number:
+                raise MatrixNotLegalToMultiply(other)
+
+            columns_cum_b = len(other.matrix[0])
+            return Matrix(tuple(tuple(calc_mul_single_cell(self.get_row_as_tuple(j), other.matrix[i])
+                                      for i in range(columns_cum_b)) for j in range(self.rows_number)))
         else:
-            # TODO
-            raise "Not Implemented!"
+            raise ObjectTypeNotLegalToMultiply(other)
         return
 
     def __rmul__(self, other):
-        if type(other) is not int and not float:
-            # TODO
-            raise "Not Implemented!"
+        if type(other) is not int and type(other) is not float:
+            raise ObjectTypeNotLegalToMultiply(other)
 
-        rows_num_a = len(self.matrix)
         return Matrix(tuple(tuple(self.matrix[j][i] * other
-            for i in (range(rows_num_a))) for j in (range(rows_num_a))))
+                                  for i in (range(self.rows_number))) for j in (range(self.rows_number))))
 
     def __truediv__(self, other):
-        if type(other) is not int and not float:
-            # TODO
-            raise "Not Implemented!"
+        if type(other) is not int and type(other) is not float:
+            raise ObjectTypeNotLegalToMultiply(other)
 
-        rows_num_a = len(self.matrix)
         return Matrix(tuple(tuple(self.matrix[j][i] / other
-            for i in (range(rows_num_a))) for j in (range(rows_num_a))))
+                                  for i in (range(self.rows_number))) for j in (range(self.rows_number))))
 
     @property
     def tuples(self):
         print("%s" % (self.matrix,))
 
-    @classmethod
-    def unity(cls, number):
-        if type(number) is not int:
-            # TODO
-            raise "Not Implemented!"
+    def get_row_as_tuple(self, row_number: int = None):
+        if row_number is None or row_number < 0 or self.rows_number < row_number:
+            return None
 
-        if number < 0:
-            # TODO
-            raise "Not Implemented!"
+        return tuple(self.matrix[i][row_number] for i in range(self.rows_number))
+
+    @classmethod
+    def unity(cls, number: int = 0):
+        if type(number) is not int or number < 0:
+            raise IllegalInput(number)
 
         return cls(tuple(tuple(1 if i == j else 0 for i in range(number)) for j in range(number)))
 
     @classmethod
     def ones(cls, number):
-        if type(number) is not int:
-            # TODO
-            raise "Not Implemented!"
+        if type(number) is not int or number < 0:
+            raise IllegalInput(number)
 
-        if number < 0:
-            # TODO
-            raise "Not Implemented!"
-
-        return cls(tuple(tuple(1 for i in range(number)) for j in range(number)))
+        return cls(tuple(tuple(1 for i in range(number)) for i in range(number)))
 
     def is_valid_matrix(self):
         for row in self.matrix:
@@ -125,18 +139,18 @@ class Matrix():
 
 # Temporery testing section:
 
-# a = Matrix(((1, 1), (2, 3)))
-# b = Matrix(((1,),))
-# c = Matrix(((1, 1, 1), (2, 3, 1), (0, 2, 0)))
+a = Matrix(((1, 1), (2, 3)))
+b = Matrix(((1,),))
+c = Matrix(((1, 1, 1), (2, 3, 1), (0, 2, 0)))
 
 # print(a)
-
-# print(a.__repr__)
-
+#
+# print(repr(a))
+#
 # a.tuples
-
+#
 # print(Matrix.unity(3))
-
+#
 # print(Matrix.ones(2))
 
 # print(a + b)
@@ -156,3 +170,8 @@ class Matrix():
 # print(10.1 * a)
 # print(a / 10)
 # print(a / 10.1)
+
+# b = Matrix(((2, 2), (1, 1)))
+#
+# print(a * b)
+# print(b * a)
