@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import ClassVar
 
 from matrix_exceptions import RowTypeNotTuple, RowItemNotNumber, RowAndColumnNumberDifferent, ObjectTypeNotMatrix, \
                               ObjectTypeNotLegalToMultiply, MatrixNotLegalToMultiply, IllegalInput
@@ -196,7 +195,7 @@ class Matrix:
 
 # b = Matrix(((1,),))
 # c = Matrix(((1, 1, 1), (2, 3, 1), (0, 2, 0)))
-
+#
 # a = Matrix(((1, 2), (3, 4)))
 # b = Matrix(((3, 5), (6, 8)))
 
