@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="jonitan-matrix",
-    version="1.0.1",
+    version="1.0.3",
     author="Yonatan Naisteter",
     author_email="skiba8150@gmail.com",
     description="Matrix of size NxN implementation.",
