@@ -4,6 +4,8 @@ from typing import Union
 class Matrix:
 
     def __init__(self, matrix: tuple):
+        if type(matrix) is not tuple:
+            raise TypeError("Matrix should be of tuple type.")
         Matrix.is_valid_matrix(matrix)
         self.matrix = matrix
 
