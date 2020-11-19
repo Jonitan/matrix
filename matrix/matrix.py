@@ -101,6 +101,9 @@ class Matrix:
 
     @classmethod
     def unity(cls, number: int = 0):
+        if type(number) is not int:
+            raise TypeError("Argument should be of int type.")
+
         if number < 0:
             raise ValueError("Argument should be of positive value.")
 
@@ -108,6 +111,9 @@ class Matrix:
 
     @classmethod
     def ones(cls, number: int = 0):
+        if type(number) is not int:
+            raise TypeError("Argument should be of int type.")
+
         if number < 0:
             raise ValueError("Argument should be of positive value.")
 

@@ -16,6 +16,15 @@ def matrix_factory():
     return _matrix_factory
 
 
+@pytest.fixture
+def compare_matrix_rows():
+    def _compare_matrix_rows(matrix_a, matrix_b):
+        for row_a, row_b in zip(matrix_a, matrix_b):
+            assert row_a == row_b
+
+    return _compare_matrix_rows
+
+
 ########################################################################################################################
 @pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
 def test_matrix_legal_argument(matrix_factory, expected_matrix):
@@ -35,7 +44,7 @@ def test_matrix_value_error(matrix_factory, expected_matrix):
 
 
 ########################################################################################################################
-@pytest.mark.parametrize("test_input,expected_exception", [
+@pytest.mark.parametrize("test_input, expected_exception", [
     (None, TypeError),
     (1, TypeError),
     ((1,), TypeError),
@@ -47,10 +56,9 @@ def test_matrix_value_error(matrix_factory, expected_matrix):
 def test_is_valid_matrix(test_input, expected_exception):
     if expected_exception is None:
         Matrix.is_valid_matrix(test_input)
-        assert True
     else:
         with pytest.raises(expected_exception):
-            assert Matrix.is_valid_matrix(test_input)
+            Matrix.is_valid_matrix(test_input)
 
 
 ########################################################################################################################
@@ -79,9 +87,8 @@ def test_matrix_len(matrix_factory, expected_matrix):
 
 ########################################################################################################################
 @pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
-def test_matrix_getitem(matrix_factory, expected_matrix):
-    # TODO
-    pass
+def test_matrix_getitem(compare_matrix_rows, matrix_factory, expected_matrix):
+    compare_matrix_rows(matrix_factory(expected_matrix), expected_matrix)
 
 
 ########################################################################################################################
@@ -90,4 +97,40 @@ def test_matrix_hash(matrix_factory, expected_matrix):
     assert hash(matrix_factory(expected_matrix)) == hash(item for item in expected_matrix)
 
 
+########################################################################################################################
+@pytest.mark.parametrize("test_input, expected_exception, expected_matrix", [
+    (None, TypeError, None),
+    (-1, ValueError, None),
+    ("test", TypeError, None),
+    (((1,),), TypeError, None),
+    (1.1, TypeError, None),
+    (0, None, ()),
+    (1, None, ((1,),)),
+    (2, None, ((1, 0), (0, 1))),
+    # (20, None, (((1,) * 20),) * 20), # TODO
+])
+def test_unity(compare_matrix_rows, test_input, expected_exception, expected_matrix):
+    if expected_exception is None and expected_matrix is not None:
+        compare_matrix_rows(Matrix.unity(test_input), expected_matrix)
+    else:
+        with pytest.raises(expected_exception):
+            Matrix.unity(test_input)
 
+
+########################################################################################################################
+@pytest.mark.parametrize("test_input, expected_exception, expected_matrix", [
+    (None, TypeError, None),
+    (-1, ValueError, None),
+    ("test", TypeError, None),
+    (((1,),), TypeError, None),
+    (1.1, TypeError, None),
+    (0, None, ()),
+    (1, None, ((1,),)),
+    (20, None, (((1,) * 20),) * 20),
+])
+def test_ones(compare_matrix_rows, test_input, expected_exception, expected_matrix):
+    if expected_exception is None and expected_matrix is not None:
+        compare_matrix_rows(Matrix.ones(test_input), expected_matrix)
+    else:
+        with pytest.raises(expected_exception):
+            Matrix.ones(test_input)
