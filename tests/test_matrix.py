@@ -95,7 +95,7 @@ def test_matrix_getitem(compare_matrix_rows, matrix_factory, expected_matrix):
 ########################################################################################################################
 @pytest.mark.parametrize('expected_matrix', [(()), ((1,),), ((1, 2), (3, 4)), ((1, 2, 3), (3, 4, 5), (1, 5, 6))])
 def test_matrix_hash(matrix_factory, expected_matrix):
-    assert hash(matrix_factory(expected_matrix)) == hash(item for item in expected_matrix)
+    assert hash(matrix_factory(expected_matrix)) == hash(expected_matrix)
 
 
 ########################################################################################################################
@@ -210,7 +210,7 @@ def test_matrix_truediv(matrix_factory, first_matrix):
             with pytest.raises(ZeroDivisionError):
                 matrix_factory(first_matrix) / item
         else:
-            assert (matrix_factory(first_matrix) / item).matrix == tuple(tuple(cell / item for cell in row)
+            assert (matrix_factory(first_matrix) / item).matrix == tuple(tuple(cell * (1 / item) for cell in row)
                                                                          for row in first_matrix)
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         if type(item) is not int and type(item) is not float:

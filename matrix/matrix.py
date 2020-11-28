@@ -6,7 +6,7 @@ class Matrix:
     def __init__(self, matrix: tuple):
         if type(matrix) is not tuple:
             raise TypeError("Matrix should be of tuple type.")
-        Matrix.is_valid_matrix(matrix)
+        self.is_valid_matrix(matrix)
         self.matrix = matrix
 
     @property
@@ -26,10 +26,10 @@ class Matrix:
         return self.matrix[i]
 
     def __hash__(self):
-        return hash(row for row in self)
+        return hash(self.matrix)
 
     def __neg__(self):
-        return Matrix(tuple(tuple(-item for item in row) for row in self))
+        return self * (-1)
 
     def __eq__(self, other):
         if type(other) is not Matrix:
@@ -59,8 +59,8 @@ class Matrix:
         if self is other:
             return self * 2
 
-        return Matrix(tuple(tuple((sum(cell_pair) for cell_pair in zip(s_row, o_row)))
-                            for s_row, o_row in zip(self, other)))
+        return Matrix(tuple(tuple((sum(cell_pair) for cell_pair in zip(self_row, other_row)))
+                            for self_row, other_row in zip(self, other)))
 
     def __sub__(self, other):
         if type(other) is not Matrix:
@@ -76,8 +76,8 @@ class Matrix:
             if len(self) != len(other):
                 raise ValueError("Matrix must be of the same order.")
 
-            return Matrix(tuple(tuple(sum(s_cell * o_cell for s_cell, o_cell in zip(s_row, o_col))
-                                      for o_col in zip(*other)) for s_row in self))
+            return Matrix(tuple(tuple(sum(self_cell * other_cell for self_cell, other_cell in zip(self_row, other_col))
+                                      for other_col in zip(*other)) for self_row in self))
 
         else:
             raise TypeError("Argument should be of int or float or Matrix type.")
@@ -86,13 +86,10 @@ class Matrix:
         return self * other
 
     def __truediv__(self, other: Union[int, float]):
-        if type(other) is not int and type(other) is not float:
-            raise TypeError("Argument should be of int or float or Matrix type.")
-
         if other == 0:
             raise ZeroDivisionError("Matrix can't be divided by 0 value.")
 
-        return Matrix(tuple(tuple(cell / other for cell in row) for row in self))
+        return self * (1 / other)
 
     @classmethod
     def is_valid_matrix(cls, matrix: tuple):
