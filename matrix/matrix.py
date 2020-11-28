@@ -86,6 +86,12 @@ class Matrix:
         return self * other
 
     def __truediv__(self, other: Union[int, float]):
+        if type(other) is not int and type(other) is not float:
+            raise TypeError("Argument should be of int or float or Matrix type.")
+
+        if other == 0:
+            raise ZeroDivisionError("Matrix can't be divided by 0 value.")
+
         return Matrix(tuple(tuple(cell / other for cell in row) for row in self))
 
     @classmethod
