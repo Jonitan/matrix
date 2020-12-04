@@ -2,10 +2,11 @@ import pytest
 
 from matrix.matrix import Matrix
 
-CONSTANT_NUMBER_LIST = [0, 3, -3, 2.5, -2.5]
-LEGAL_MATRIX_LIST = [(()), ((1,),), ((1, 2), (3, 4)), ((1, 2, 3), (3, 4, 5), (1, 5, 6))]
+CONSTANT_NUMBER_LIST = [50, -2.5, 0, 2]
+LEGAL_MATRIX_LIST = [(()), ((1,),), ((1, 2), (-3, -4)), ((1, 2.5, 3), (3, 4, 5), (1, -5.5, 6))]
 ILLEGAL_TYPE_MATRIX_LIST = [None, 1, "test", [(1,)]]
-ILLEGAL_VALUE_MATRIX_LIST = [((), (1,)), ((), (1,)), ((1,), (1,)), ((1, 2), (1,))]
+ILLEGAL_TYPE_MATRIX_CELL = [(("1",),), ((1, 1), (1, [2])), ((1, 1), (1, "[2]"))]
+ILLEGAL_VALUE_MATRIX_LIST = [((), (1,)), ((1,), (1,)), ((1, 2), (1,))]
 VERY_BIG_MATRIX = (((1, ) * 100), ) * 100
 
 
@@ -27,33 +28,25 @@ def compare_matrix_rows():
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
-def test_matrix_legal_argument(matrix_factory, expected_matrix):
-    assert matrix_factory(expected_matrix).matrix == expected_matrix
-
-
-@pytest.mark.parametrize('expected_matrix', ILLEGAL_TYPE_MATRIX_LIST)
-def test_matrix_type_error(matrix_factory, expected_matrix):
-    with pytest.raises(TypeError):
-        matrix_factory(expected_matrix)
-
-
-@pytest.mark.parametrize('expected_matrix', [((), (1,)), ((1,), (1,)), ((1, 2), (1,))])
-def test_matrix_value_error(matrix_factory, expected_matrix):
-    with pytest.raises(ValueError):
-        matrix_factory(expected_matrix)
+@pytest.mark.parametrize('expected_matrix, expected_exception',
+                         list(zip(LEGAL_MATRIX_LIST, [None] * len(LEGAL_MATRIX_LIST))) +
+                         list(zip(ILLEGAL_TYPE_MATRIX_LIST, [TypeError] * len(ILLEGAL_TYPE_MATRIX_LIST))) +
+                         list(zip(ILLEGAL_TYPE_MATRIX_CELL, [TypeError] * len(ILLEGAL_TYPE_MATRIX_CELL))) +
+                         list(zip(ILLEGAL_VALUE_MATRIX_LIST, [ValueError] * len(ILLEGAL_VALUE_MATRIX_LIST))))
+def test_matrix(matrix_factory, expected_matrix, expected_exception):
+    if expected_exception is None:
+        assert matrix_factory(expected_matrix).matrix == expected_matrix
+    else:
+        with pytest.raises(expected_exception):
+            matrix_factory(expected_matrix)
 
 
 ########################################################################################################################
-@pytest.mark.parametrize("test_input, expected_exception", [
-    (None, TypeError),
-    (1, TypeError),
-    ((1,), TypeError),
-    (((1,), (1,)), ValueError),
-    ((), None),
-    (((1,),), None),
-    (((1, 2), (4, 5)), None)
-])
+@pytest.mark.parametrize("test_input, expected_exception",
+                         list(zip(LEGAL_MATRIX_LIST, [None] * len(LEGAL_MATRIX_LIST))) +
+                         list(zip(ILLEGAL_TYPE_MATRIX_LIST, [TypeError] * len(ILLEGAL_TYPE_MATRIX_LIST))) +
+                         list(zip(ILLEGAL_TYPE_MATRIX_CELL, [TypeError] * len(ILLEGAL_TYPE_MATRIX_CELL))) +
+                         list(zip(ILLEGAL_VALUE_MATRIX_LIST, [ValueError] * len(ILLEGAL_VALUE_MATRIX_LIST))))
 def test_is_valid_matrix(test_input, expected_exception):
     if expected_exception is None:
         Matrix.is_valid_matrix(test_input)
@@ -93,145 +86,165 @@ def test_matrix_getitem(compare_matrix_rows, matrix_factory, expected_matrix):
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('expected_matrix', [(()), ((1,),), ((1, 2), (3, 4)), ((1, 2, 3), (3, 4, 5), (1, 5, 6))])
+@pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
 def test_matrix_hash(matrix_factory, expected_matrix):
     assert hash(matrix_factory(expected_matrix)) == hash(expected_matrix)
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
-def test_matrix_neg(matrix_factory, expected_matrix):
-    assert (-matrix_factory(expected_matrix)).matrix == tuple(tuple(-item for item in row) for row in expected_matrix)
+@pytest.mark.parametrize('expected_matrix, expected_result', zip(
+    LEGAL_MATRIX_LIST,
+    [(()), ((-1,),), ((-1, -2), (3, 4)), ((-1, -2.5, -3), (-3, -4, -5), (-1, 5.5, -6))])
+)
+def test_matrix_neg(matrix_factory, expected_matrix, expected_result):
+    assert (-matrix_factory(expected_matrix)).matrix == expected_result
 
 
 ########################################################################################################################
 @pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
 def test_matrix_eq(matrix_factory, expected_matrix):
-    assert matrix_factory(expected_matrix) == matrix_factory(expected_matrix)
-    assert (matrix_factory(expected_matrix) == matrix_factory(((42, -42), (0, 42)))) is False
-    matrix = matrix_factory(expected_matrix)
-    assert matrix == matrix
+    tested_matrix = matrix_factory(expected_matrix)
+
+    assert tested_matrix == matrix_factory(expected_matrix)
+    assert (tested_matrix == matrix_factory(((42, -42), (0.5, 42)))) is False
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         with pytest.raises(TypeError):
-            matrix_factory(expected_matrix) == item
+            tested_matrix == item
 
 
 ########################################################################################################################
 @pytest.mark.parametrize('expected_matrix', LEGAL_MATRIX_LIST)
 def test_matrix_ne(matrix_factory, expected_matrix):
-    assert matrix_factory(expected_matrix) != matrix_factory(((42, -42), (0, 42)))
-    assert (matrix_factory(expected_matrix) != matrix_factory(expected_matrix)) is False
-    matrix = matrix_factory(expected_matrix)
-    assert (matrix != matrix) is False
+    tested_matrix = matrix_factory(expected_matrix)
+
+    assert tested_matrix != matrix_factory(((42, -42), (0.5, 42)))
+    assert (tested_matrix != matrix_factory(expected_matrix)) is False
+    assert (tested_matrix != tested_matrix) is False
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         with pytest.raises(TypeError):
-            matrix_factory(expected_matrix) != item
+            tested_matrix != item
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('first_matrix, second_matrix, expected_matrix',
-                         zip(LEGAL_MATRIX_LIST,
-                             [(()), ((6,),), ((-1, 7), (2, 2)), ((1, 2, 3), (3, 4, 5), (-1, -5, 16))],
-                             [(()), ((7,),), ((0, 9), (5, 6)), ((2, 4, 6), (6, 8, 10), (0, 0, 22))])
-                         )
+@pytest.mark.parametrize('first_matrix, second_matrix, expected_matrix', zip(
+    LEGAL_MATRIX_LIST,
+    [(()), ((6,),), ((-1, 7), (2, 2)), ((1, 2, 3), (3, 4, 5), (-1, -5, 16))],
+    [(()), ((7,),), ((0, 9), (-1, -2)), ((2, 4.5, 6), (6, 8, 10), (0, -10.5, 22))])
+)
 def test_matrix_add(matrix_factory, first_matrix, second_matrix, expected_matrix):
-    assert (matrix_factory(first_matrix) + matrix_factory(second_matrix)).matrix == expected_matrix
+    tested_matrix = matrix_factory(first_matrix)
+
+    assert (tested_matrix + matrix_factory(second_matrix)).matrix == expected_matrix
     if first_matrix != (()):
-        assert ((matrix_factory(first_matrix) + matrix_factory(expected_matrix)).matrix == second_matrix) is False
-    matrix = matrix_factory(first_matrix)
-    assert (matrix + matrix).matrix == tuple(tuple(cell * 2 for cell in row) for row in first_matrix)
+        assert ((tested_matrix + tested_matrix).matrix == expected_matrix) is False
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         with pytest.raises(TypeError):
-            matrix_factory(first_matrix) + item
+            tested_matrix + item
+
     with pytest.raises(ValueError):
-        matrix_factory(first_matrix) + matrix_factory(VERY_BIG_MATRIX)
+        tested_matrix + matrix_factory(VERY_BIG_MATRIX)
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('first_matrix, second_matrix, expected_matrix',
-                         zip(LEGAL_MATRIX_LIST,
-                             [(()), ((6,),), ((-1, 7), (2, 2)), ((1, 2, 3), (3, 4, 5), (-1, -5, 16))],
-                             [(()), ((-5,),), ((2, -5), (1, 2)), ((0, 0, 0), (0, 0, 0), (2, 10, -10))])
-                         )
+@pytest.mark.parametrize('first_matrix, second_matrix, expected_matrix', zip(
+    LEGAL_MATRIX_LIST,
+    [(()), ((6,),), ((-1, 7), (2, 2)), ((1, 2, 3), (3, 4, 5), (-1, -5, 16))],
+    [(()), ((-5,),), ((2, -5), (-5, -6)), ((0, 0.5, 0), (0, 0, 0), (2, -0.5, -10))])
+)
 def test_matrix_sub(matrix_factory, first_matrix, second_matrix, expected_matrix):
-    assert (matrix_factory(first_matrix) - matrix_factory(second_matrix)).matrix == expected_matrix
+    tested_matrix = matrix_factory(first_matrix)
+
+    assert (tested_matrix - matrix_factory(second_matrix)).matrix == expected_matrix
     if first_matrix != (()):
-        assert ((matrix_factory(second_matrix) - matrix_factory(first_matrix)).matrix == expected_matrix) is False
-    matrix = matrix_factory(first_matrix)
-    assert (matrix - matrix).matrix == tuple((tuple((0,) * len(matrix)),) * len(matrix))
+        assert ((tested_matrix - tested_matrix).matrix == expected_matrix) is False
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         with pytest.raises(TypeError):
-            matrix_factory(first_matrix) - item
+            tested_matrix - item
+
     with pytest.raises(ValueError):
-        matrix_factory(first_matrix) - matrix_factory(VERY_BIG_MATRIX)
+        tested_matrix - matrix_factory(VERY_BIG_MATRIX)
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('first_matrix, second_matrix, expected_matrix',
-                         zip(LEGAL_MATRIX_LIST,
-                             [(()), ((6,),), ((-1, 7), (2, 2)), ((1, 2, 3), (3, 4, 5), (-1, -5, 16))],
-                             [(()), ((6,),), ((3, 11), (5, 29)), ((4, -5, 61), (10, -3, 109), (10, -8, 124))])
-                         )
-def test_matrix_mul(matrix_factory, first_matrix, second_matrix, expected_matrix):
-    for item in CONSTANT_NUMBER_LIST:
-        assert (matrix_factory(first_matrix) * item).matrix == tuple(tuple(cell * item for cell in row)
-                                                                     for row in first_matrix)
-    assert (matrix_factory(first_matrix) * matrix_factory(second_matrix)).matrix == expected_matrix
+@pytest.mark.parametrize('first_matrix, second_matrix, expected_matrix, constant, expected_matrix_constant', zip(
+    LEGAL_MATRIX_LIST,
+    [(()), ((6,),), ((-1, 7), (2, 2)), ((1, 2, 3), (3, 4, 5), (-1, -5, 16))],
+    [(()), ((6,),), ((3, 11), (-5, -29)), ((5.5, -3, 63.5), (10, -3, 109), (-21.5, -50, 71.5))],
+    CONSTANT_NUMBER_LIST,
+    [(()), ((-2.5,),), ((0, 0), (0, 0)), ((2, 5, 6), (6, 8, 10), (2, -11, 12))])
+)
+def test_matrix_mul(matrix_factory, first_matrix, second_matrix, expected_matrix, constant, expected_matrix_constant):
+    tested_matrix = matrix_factory(first_matrix)
+
+    assert (tested_matrix * constant).matrix == expected_matrix_constant
+    assert (tested_matrix * matrix_factory(second_matrix)).matrix == expected_matrix
     if first_matrix != (()):
-        assert ((matrix_factory(second_matrix) * matrix_factory(expected_matrix)).matrix == first_matrix) is False
-    matrix = matrix_factory(first_matrix)
-    assert (matrix * matrix).matrix == tuple(tuple(sum(s_cell * o_cell for s_cell, o_cell in zip(s_row, o_col))
-                                                   for o_col in zip(*matrix)) for s_row in matrix)
+        assert ((tested_matrix * tested_matrix).matrix == expected_matrix) is False
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         if type(item) is not int and type(item) is not float:
             with pytest.raises(TypeError):
-                matrix_factory(first_matrix) * item
+                tested_matrix * item
+
     with pytest.raises(ValueError):
-        matrix_factory(first_matrix) * matrix_factory(VERY_BIG_MATRIX)
+        tested_matrix * matrix_factory(VERY_BIG_MATRIX)
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('first_matrix', LEGAL_MATRIX_LIST)
-def test_matrix_rmul(matrix_factory, first_matrix):
-    for item in CONSTANT_NUMBER_LIST:
-        assert (item * matrix_factory(first_matrix)).matrix == tuple(tuple(cell * item for cell in row)
-                                                                     for row in first_matrix)
+@pytest.mark.parametrize('first_matrix, constant, expected_matrix_constant', zip(
+    LEGAL_MATRIX_LIST,
+    CONSTANT_NUMBER_LIST,
+    [(()), ((-2.5,),), ((0, 0), (0, 0)), ((2, 5, 6), (6, 8, 10), (2, -11, 12))])
+)
+def test_matrix_rmul(matrix_factory, first_matrix, constant, expected_matrix_constant):
+    tested_matrix = matrix_factory(first_matrix)
+
+    assert (tested_matrix * constant).matrix == expected_matrix_constant
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         if type(item) is not int and type(item) is not float:
             with pytest.raises(TypeError):
-                item * matrix_factory(first_matrix)
+                item * tested_matrix
 
 
 ########################################################################################################################
-@pytest.mark.parametrize('first_matrix', LEGAL_MATRIX_LIST)
-def test_matrix_truediv(matrix_factory, first_matrix):
-    for item in CONSTANT_NUMBER_LIST:
-        if item == 0:
-            with pytest.raises(ZeroDivisionError):
-                matrix_factory(first_matrix) / item
-        else:
-            assert (matrix_factory(first_matrix) / item).matrix == tuple(tuple(cell * (1 / item) for cell in row)
-                                                                         for row in first_matrix)
+@pytest.mark.parametrize('first_matrix, constant, expected_matrix_constant', zip(
+    LEGAL_MATRIX_LIST,
+    [-2.33, 0.25, 10, -1],
+    [(()), ((4,),), ((0.1, 0.2), (-0.3, -0.4)), ((-1, -2.5, -3), (-3, -4, -5), (-1, 5.5, -6))])
+)
+def test_matrix_truediv(matrix_factory, first_matrix, constant, expected_matrix_constant):
+    tested_matrix = matrix_factory(first_matrix)
+
+    assert (tested_matrix / constant).matrix == expected_matrix_constant
+
+    with pytest.raises(ZeroDivisionError):
+        tested_matrix / 0
+
     for item in ILLEGAL_TYPE_MATRIX_LIST:
         if type(item) is not int and type(item) is not float:
             with pytest.raises(TypeError):
-                matrix_factory(first_matrix) / item
+                tested_matrix / item
 
 
 ########################################################################################################################
 @pytest.mark.parametrize("test_input, expected_exception, expected_matrix", [
     (None, TypeError, None),
-    (-1, ValueError, None),
     ("test", TypeError, None),
     (((1,),), TypeError, None),
     (1.1, TypeError, None),
+    (-1, ValueError, None),
     (0, None, ()),
     (1, None, ((1,),)),
     (2, None, ((1, 0), (0, 1))),
-    (20, None, tuple(tuple(1 if i == j else 0 for i in range(20)) for j in range(20)))
+    (3, None, ((1, 0, 0), (0, 1, 0), (0, 0, 1)))
 ])
 def test_unity(compare_matrix_rows, test_input, expected_exception, expected_matrix):
-    if expected_exception is None and expected_matrix is not None:
+    if expected_exception is None:
         compare_matrix_rows(Matrix.unity(test_input), expected_matrix)
     else:
         with pytest.raises(expected_exception):
@@ -241,16 +254,17 @@ def test_unity(compare_matrix_rows, test_input, expected_exception, expected_mat
 ########################################################################################################################
 @pytest.mark.parametrize("test_input, expected_exception, expected_matrix", [
     (None, TypeError, None),
-    (-1, ValueError, None),
     ("test", TypeError, None),
     (((1,),), TypeError, None),
     (1.1, TypeError, None),
+    (-1, ValueError, None),
     (0, None, ()),
     (1, None, ((1,),)),
-    (20, None, (((1,) * 20),) * 20),
+    (2, None, ((1, 1), (1, 1))),
+    (3, None, ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
 ])
 def test_ones(compare_matrix_rows, test_input, expected_exception, expected_matrix):
-    if expected_exception is None and expected_matrix is not None:
+    if expected_exception is None:
         compare_matrix_rows(Matrix.ones(test_input), expected_matrix)
     else:
         with pytest.raises(expected_exception):

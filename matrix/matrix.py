@@ -4,8 +4,6 @@ from typing import Union
 class Matrix:
 
     def __init__(self, matrix: tuple):
-        if type(matrix) is not tuple:
-            raise TypeError("Matrix should be of tuple type.")
         self.is_valid_matrix(matrix)
         self.matrix = matrix
 
@@ -38,9 +36,6 @@ class Matrix:
         if len(self) != len(other):
             return False
 
-        if self is other:
-            return True
-
         if any(s_row != o_row for s_row, o_row in zip(self, other)):
             return False
 
@@ -55,9 +50,6 @@ class Matrix:
 
         if len(self) != len(other):
             raise ValueError("Matrix must be of the same order.")
-
-        if self is other:
-            return self * 2
 
         return Matrix(tuple(tuple((sum(cell_pair) for cell_pair in zip(self_row, other_row)))
                             for self_row, other_row in zip(self, other)))
@@ -86,13 +78,19 @@ class Matrix:
         return self * other
 
     def __truediv__(self, other: Union[int, float]):
+        if type(other) is not int and type(other) is not float:
+            raise TypeError("Argument should be of int or float or Matrix type.")
+
         if other == 0:
             raise ZeroDivisionError("Matrix can't be divided by 0 value.")
 
-        return self * (1 / other)
+        return Matrix(tuple(tuple(cell / other for cell in row) for row in self))
 
     @classmethod
     def is_valid_matrix(cls, matrix: tuple):
+        if type(matrix) is not tuple:
+            raise TypeError("Matrix should be of tuple type.")
+
         if any(type(row) is not tuple for row in matrix):
             raise TypeError("All rows should be tuples")
 
@@ -121,67 +119,3 @@ class Matrix:
             raise ValueError("Argument should be of positive value.")
 
         return cls(tuple((tuple((1,) * number),) * number))
-
-
-# Temporery testing section:
-
-# a = Matrix(((1, 1, 1), (2, 2, 2), (3, 3, 3)))
-# b = Matrix(((4, 4, 4), (5, 5, 5), (6, 6, 6)))
-# c = Matrix(((1, 1, 1), (2, 3, 1), (0, 2, 0)))
-
-# print(a)
-# print(repr(a))
-# a.tuples
-
-# print(Matrix.unity(3))
-# print(Matrix.ones(3))
-
-# print(a + b)
-# print(a + c)
-# print(b + a)
-# print(c + a)
-# print(a + a)
-# print(a + Matrix.unity(3))
-# # print(a + ((1,),))
-
-# print(a - b)
-# print(b - a)
-# print(a - c)
-# print(c - a)
-# print(a - a)
-# print(a - Matrix.unity(3))
-# # print(a - ((1,),))
-
-# print(10 * a)
-# print(10.1 * a)
-# print(a * 10)
-# print(a * 10.1)
-# print(a / 10)
-# print(a / 10.1)
-
-# a = Matrix(((1, 2), (3, 4)))
-# b = Matrix(((3, 5), (6, 8)))
-
-# print(a * b)
-# print(b * a)
-# print(a * a)
-
-# print(a == b)
-# print(a != b)
-# print(a == a)
-# print(a != a)
-# print(a == 1)
-# print(a != 1)
-
-# b = Matrix(((1, 2), (3, 4)))
-# print(a == b)
-# print(a != b)
-
-# for i in a:
-#     print(str(i))
-
-# dictionary = {}
-# dictionary[Matrix(((1, 1), (2, 2)))] = 1
-# dictionary[Matrix(((1, 1), (2, 2)))] = 2
-# dictionary[Matrix(((1, 1), (2, 3)))] = 3
-# print(dictionary)
