@@ -15,7 +15,8 @@ class Matrix:
         return str(self.matrix)
 
     def __repr__(self):
-        return f"Matrix({self.matrix})"
+
+        return f"{self.__class__.__name__}({self.matrix})"
 
     def __len__(self):
         return len(self.matrix)
